@@ -646,7 +646,7 @@
     .labs-grid {
       margin-top: 1rem;
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: 1fr;
       gap: 1rem;
     }
 
@@ -655,11 +655,11 @@
       display: grid;
       grid-template-rows: auto 1fr;
       gap: 0.9rem;
-      min-height: 420px;
+      min-height: 560px;
     }
 
     .tool-frame-wrap {
-      min-height: 320px;
+      min-height: 460px;
       border-radius: 18px;
       overflow: hidden;
       border: 1px solid var(--border);
@@ -669,16 +669,9 @@
     .tool-frame {
       width: 100%;
       height: 100%;
-      min-height: 320px;
+      min-height: 460px;
       border: 0;
       display: block;
-      background: #fff;
-    }
-
-    .geogebra-host {
-      width: 100%;
-      height: 100%;
-      min-height: 320px;
       background: #fff;
     }
 
@@ -924,12 +917,17 @@
                   <h3 style="margin-bottom: 0.4rem;">Laboratorio visual</h3>
                   <p style="margin-bottom: 0.8rem;">Un espacio para manipular vectores, bases y transformaciones lineales en tiempo real.</p>
                   <div class="inline-actions">
-                    <a class="btn btn-secondary" href="https://www.geogebra.org/classic" target="_blank" rel="noopener noreferrer">Abrir GeoGebra</a>
-                    <button class="btn btn-secondary" id="loadVectorDemoBtn">Cargar demo de vectores</button>
+                    <a class="btn btn-secondary" href="https://www.geogebra.org/classic?lang=es" target="_blank" rel="noopener noreferrer">Abrir GeoGebra</a>
                   </div>
                 </div>
                 <div class="tool-frame-wrap">
-                  <div id="geogebraApplet" class="geogebra-host"></div>
+                  <iframe
+                    class="tool-frame"
+                    title="GeoGebra"
+                    loading="lazy"
+                    src="https://www.geogebra.org/classic?lang=es"
+                    referrerpolicy="strict-origin-when-cross-origin">
+                  </iframe>
                 </div>
               </div>
 
@@ -1051,9 +1049,9 @@
     };
 
     const YOUTUBE_VIDEO_ID = 'fNk_zzaMoSs';
-    const VIDEO_START_SECONDS = 394;
+    const VIDEO_START_SECONDS = 0;
     const CHECKPOINT_OFFSET_SECONDS = 80;
-    const CHECKPOINT_TIME = VIDEO_START_SECONDS + CHECKPOINT_OFFSET_SECONDS;
+    const CHECKPOINT_TIME = CHECKPOINT_OFFSET_SECONDS;
     let player = null;
     let playerReady = false;
     let lastKnownTime = 0;
@@ -1081,10 +1079,9 @@
     const fullscreenBtn = document.getElementById('fullscreenBtn');
     const videoFrameCard = document.getElementById('videoFrameCard');
     const deploymentWarning = document.getElementById('deploymentWarning');
-    const loadVectorDemoBtn = document.getElementById('loadVectorDemoBtn');
     const pasteNotebookPromptBtn = document.getElementById('pasteNotebookPromptBtn');
 
-    let geogebraAppletLoaded = false;
+    let pendingLessonAutoplay = false;
 
     function renderCourses() {
       coursesList.innerHTML = courseData.map(course => `
@@ -1145,13 +1142,17 @@
       document.getElementById('lessonTitle').textContent = `Álgebra Lineal — ${lesson.title}`;
       setActiveRoute('leccion');
       ensurePlayer();
+      pendingLessonAutoplay = true;
       checkpointShown = false;
+      lastKnownTime = 0;
+      currentTimePill.textContent = `Tiempo actual: ${formatTime(0)}`;
       exerciseBox.classList.remove('active');
       exerciseFeedback.className = 'feedback';
       exerciseFeedback.textContent = '';
-      if (player && playerReady && typeof player.seekTo === 'function') {
+      if (player && playerReady && typeof player.loadVideoById === 'function') {
         player.loadVideoById({ videoId: YOUTUBE_VIDEO_ID, startSeconds: VIDEO_START_SECONDS });
         player.playVideo();
+        pendingLessonAutoplay = false;
       }
       if (timeInterval) clearInterval(timeInterval);
       startTimeTracking();
@@ -1290,10 +1291,15 @@
         deploymentWarning.classList.add('active');
       }
       if (player && typeof player.cueVideoById === 'function') {
-        player.cueVideoById({ videoId: YOUTUBE_VIDEO_ID, startSeconds: VIDEO_START_SECONDS });
+        if (pendingLessonAutoplay || location.hash.replace('#', '') === 'leccion') {
+          player.loadVideoById({ videoId: YOUTUBE_VIDEO_ID, startSeconds: VIDEO_START_SECONDS });
+          player.playVideo();
+          pendingLessonAutoplay = false;
+        } else {
+          player.cueVideoById({ videoId: YOUTUBE_VIDEO_ID, startSeconds: VIDEO_START_SECONDS });
+        }
       }
       startTimeTracking();
-      initGeoGebraApplet();
     }
 
     function onPlayerStateChange(event) {
@@ -1403,51 +1409,7 @@
       chatInput.focus();
     }
 
-    function initGeoGebraApplet() {
-      if (geogebraAppletLoaded || typeof GGBApplet === 'undefined') return;
-      geogebraAppletLoaded = true;
-      const params = {
-        appName: 'graphing',
-        width: 980,
-        height: 420,
-        showToolBar: false,
-        showAlgebraInput: true,
-        showMenuBar: false,
-        borderColor: false,
-        enableShiftDragZoom: true,
-        scaleContainerClass: 'geogebra-host',
-        appletOnLoad(api) {
-          window.ggbApi = api;
-          loadGeoGebraVectorDemo();
-        }
-      };
-      const applet = new GGBApplet(params, true);
-      applet.inject('geogebraApplet');
-    }
-
-    function loadGeoGebraVectorDemo() {
-      if (!window.ggbApi || typeof window.ggbApi.evalCommand !== 'function') return;
-      const commands = [
-        'DeleteAll[]',
-        'v = Vector((0,0),(2,1))',
-        'w = Vector((0,0),(1,2))',
-        'A = (0,0)',
-        'B = (2,1)',
-        'C = (1,2)',
-        'P = B + C',
-        'Text("v", (2.15,1.05))',
-        'Text("w", (1.15,2.1))',
-        'Text("v + w", (3.2,3.15))'
-      ];
-      commands.forEach(cmd => { try { window.ggbApi.evalCommand(cmd); } catch (e) {} });
-      try { window.ggbApi.setCoordSystem(-1, 5, -1, 5); } catch (e) {}
-    }
-
     document.getElementById('jumpToLessonBtn').addEventListener('click', () => openLesson('alg-1'));
-    loadVectorDemoBtn.addEventListener('click', () => {
-      initGeoGebraApplet();
-      loadGeoGebraVectorDemo();
-    });
     pasteNotebookPromptBtn.addEventListener('click', () => {
       injectChatPrompt('Dame un ejercicio corto en Python para practicar combinaciones lineales con vectores de R2');
     });
@@ -1492,7 +1454,6 @@
     seedChat();
     handleHashRouting();
   </script>
-  <script src="https://www.geogebra.org/apps/deployggb.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
   <script>
     function onYouTubeIframeAPIReady() {
