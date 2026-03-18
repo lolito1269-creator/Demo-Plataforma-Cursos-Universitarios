@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus IA — Prototipo</title>
+  <style>
+    :root {
+      --bg: #08111f;
+      --panel: #0f1b2d;
+      --panel-2: #13243b;
+      --panel-3: #182d48;
+      --text: #e7eef9;
+      --muted: #9eb0c8;
+      --accent: #59b2ff;
+      --accent-2: #7c5cff;
+      --ok: #20c997;
+      --warn: #ffcc66;
+      --danger: #ff6b6b;
+      --border: rgba(255,255,255,0.08);
+      --shadow: 0 18px 45px rgba(0,0,0,0.25);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: linear-gradient(180deg, #06101d 0%, #0a1527 100%); color: var(--text); }
+    body { min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+
+    .app-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      backdrop-filter: blur(18px);
+      background: rgba(6, 16, 29, 0.8);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-weight: 700;
+    }
+
+    .brand-badge {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      font-weight: 800;
+      box-shadow: var(--shadow);
+    }
+
+    .topnav {
+      display: flex;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-link {
+      padding: 0.72rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      transition: 0.2s ease;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .nav-link.active,
+    .nav-link:hover {
+      color: white;
+      border-color: rgba(89,178,255,0.45);
+      background: rgba(89,178,255,0.13);
+    }
+
+    .page {
+      display: none;
+      width: 100%;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .container {
+      width: min(1240px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 1.4rem;
+      align-items: stretch;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(19,36,59,0.96), rgba(12,24,41,0.96));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-copy {
+      padding: 1.7rem;
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      margin-bottom: 0.85rem;
+    }
+
+    h1, h2, h3, h4, p { margin-top: 0; }
+    h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.03; margin-bottom: 0.9rem; }
+    h2 { font-size: clamp(1.4rem, 2vw, 2rem); margin-bottom: 0.8rem; }
+    p { color: var(--muted); line-height: 1.6; }
+
+    .hero-actions,
+    .inline-actions,
+    .checkpoint-actions,
+    .player-tools,
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      border: 1px solid transparent;
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      background: rgba(255,255,255,0.06);
+      color: white;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #3e8dff);
+      box-shadow: 0 10px 30px rgba(62,141,255,0.25);
+    }
+
+    .btn-secondary {
+      border-color: rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #1ca97e, #0f8d69);
+    }
+
+    .stats-card {
+      padding: 1.4rem;
+      display: grid;
+      gap: 1rem;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .feature-list,
+    .mini-kpis,
+    .course-meta,
+    .lesson-meta {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .tag,
+    .kpi,
+    .meta-chip {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.45rem 0.7rem;
+      color: var(--muted);
+      background: rgba(255,255,255,0.04);
+      font-size: 0.92rem;
+    }
+
+    .split-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1.2rem;
+    }
+
+    .mini-card {
+      padding: 1rem;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 1rem;
+      margin: 2.2rem 0 1rem;
+    }
+
+    .courses-list {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .course-row {
+      padding: 1.1rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .course-row-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .course-lessons {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(200px, 1fr));
+      gap: 0.9rem;
+    }
+
+    .lesson-card {
+      position: relative;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border-radius: 16px;
+      min-height: 166px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: 0.2s ease;
+      cursor: pointer;
+    }
+
+    .lesson-card:hover { transform: translateY(-2px); border-color: rgba(89,178,255,0.3); }
+    .lesson-card.locked {
+      cursor: not-allowed;
+      opacity: 0.75;
+    }
+
+    .lesson-card.locked:hover { transform: none; }
+
+    .lesson-thumb {
+      height: 88px;
+      background: linear-gradient(135deg, rgba(89,178,255,0.22), rgba(124,92,255,0.18));
+      border-bottom: 1px solid var(--border);
+      padding: 0.9rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .lesson-body {
+      padding: 0.95rem;
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .lesson-title {
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .lesson-subtitle {
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .lock-badge,
+    .open-badge {
+      border-radius: 999px;
+      padding: 0.36rem 0.62rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(8,17,31,0.6);
+      backdrop-filter: blur(12px);
+    }
+
+    .open-badge { color: #dff9ff; }
+    .lock-badge { color: #ffe8b3; }
+
+    .player-page {
+      background: #030813;
+      min-height: calc(100vh - 74px);
+    }
+
+    .player-layout {
+      width: 100%;
+      padding: 0;
+      max-width: none;
+      min-height: calc(100vh - 74px);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .player-header {
+      padding: 1rem 1.2rem 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .player-header .title-wrap { max-width: 900px; }
+
+    .player-shell {
+      padding: 0.5rem 1.2rem 1rem;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .player-main {
+      display: grid;
+      grid-template-rows: minmax(56vh, 1fr) auto;
+      gap: 1rem;
+    }
+
+    .video-frame-card {
+      position: relative;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      overflow: hidden;
+      min-height: 62vh;
+      box-shadow: var(--shadow);
+    }
+
+    #youtube-player,
+    #youtube-player iframe {
+      width: 100%;
+      height: 100%;
+      min-height: 62vh;
+      display: block;
+    }
+
+    .timeline-note {
+      position: absolute;
+      left: 1rem;
+      bottom: 1rem;
+      right: 1rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      pointer-events: none;
+    }
+
+    .timeline-pill {
+      background: rgba(3, 8, 19, 0.82);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: white;
+      padding: 0.55rem 0.8rem;
+      border-radius: 999px;
+      backdrop-filter: blur(10px);
+      font-size: 0.92rem;
+    }
+
+    .context-panel,
+    .sidebar-panel,
+    .chat-panel,
+    .checkpoint-sheet {
+      background: linear-gradient(180deg, rgba(15,27,45,0.96), rgba(10,17,30,0.98));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .context-panel {
+      padding: 1rem;
+      display: none;
+    }
+
+    .context-panel.active { display: block; }
+
+    .player-sidebar {
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+
+    .sidebar-panel { padding: 1rem; }
+
+    .chapter-list {
+      display: grid;
+      gap: 0.7rem;
+      margin-top: 1rem;
+    }
+
+    .chapter-item {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 0.8rem;
+      background: rgba(255,255,255,0.03);
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .chapter-item.current {
+      border-color: rgba(89,178,255,0.4);
+      background: rgba(89,178,255,0.12);
+    }
+
+    .player-bottom {
+      padding: 0 1.2rem 1.2rem;
+    }
+
+    .chat-panel {
+      min-height: 28vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+    }
+
+    .chat-header,
+    .checkpoint-header {
+      padding: 1rem 1.1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .chat-messages {
+      padding: 1rem;
+      display: grid;
+      gap: 0.85rem;
+      max-height: 280px;
+      overflow: auto;
+      align-content: start;
+    }
+
+    .message {
+      max-width: min(900px, 100%);
+      padding: 0.85rem 0.95rem;
+      border-radius: 16px;
+      line-height: 1.5;
+      border: 1px solid var(--border);
+    }
+
+    .message.user {
+      margin-left: auto;
+      background: rgba(89,178,255,0.15);
+      border-color: rgba(89,178,255,0.3);
+    }
+
+    .message.ai {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .chat-input-row {
+      border-top: 1px solid var(--border);
+      padding: 0.9rem 1rem 1rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.8rem;
+      align-items: end;
+    }
+
+    .chat-input-wrap {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 82px;
+      resize: vertical;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: white;
+      padding: 0.9rem 1rem;
+      outline: none;
+    }
+
+    textarea:focus,
+    .search-input:focus {
+      border-color: rgba(89,178,255,0.45);
+      box-shadow: 0 0 0 3px rgba(89,178,255,0.12);
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.7rem;
+      margin-top: 1rem;
+    }
+
+    .search-input {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      color: white;
+      padding: 0.85rem 0.95rem;
+      outline: none;
+    }
+
+    .search-result {
+      margin-top: 0.9rem;
+      padding: 0.9rem;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      display: none;
+    }
+
+    .search-result.active { display: block; }
+
+    .checkpoint-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 12, 0.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.2rem;
+      z-index: 80;
+      backdrop-filter: blur(8px);
+    }
+
+    .checkpoint-overlay.active { display: flex; }
+
+    .checkpoint-sheet {
+      width: min(780px, 100%);
+      overflow: hidden;
+    }
+
+    .checkpoint-content {
+      padding: 1.1rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.85rem;
+    }
+
+    .choice-card {
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      background: rgba(255,255,255,0.04);
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .choice-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(89,178,255,0.35);
+      background: rgba(89,178,255,0.1);
+    }
+
+    .exercise-box {
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      background: rgba(255,255,255,0.03);
+      display: none;
+    }
+
+    .exercise-box.active { display: block; }
+
+    .quiz-option {
+      display: block;
+      margin-bottom: 0.6rem;
+      padding: 0.75rem 0.8rem;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .feedback {
+      margin-top: 0.8rem;
+      padding: 0.8rem 0.85rem;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      display: none;
+    }
+
+    .feedback.ok {
+      display: block;
+      color: #dff7ef;
+      background: rgba(32,201,151,0.12);
+      border-color: rgba(32,201,151,0.32);
+    }
+
+    .feedback.bad {
+      display: block;
+      color: #ffe8e8;
+      background: rgba(255,107,107,0.12);
+      border-color: rgba(255,107,107,0.3);
+    }
+
+    .footer-note {
+      margin-top: 1rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .deployment-warning {
+      display: none;
+      margin-top: 0.9rem;
+      padding: 0.95rem 1rem;
+      border-radius: 16px;
+      border: 1px solid rgba(255,204,102,0.28);
+      background: rgba(255,204,102,0.08);
+      color: #ffe7b3;
+    }
+
+    .deployment-warning.active { display: block; }
+
+    .labs-grid {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .tool-panel {
+      padding: 1rem;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 0.9rem;
+      min-height: 420px;
+    }
+
+    .tool-frame-wrap {
+      min-height: 320px;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .tool-frame {
+      width: 100%;
+      height: 100%;
+      min-height: 320px;
+      border: 0;
+      display: block;
+      background: #fff;
+    }
+
+    .geogebra-host {
+      width: 100%;
+      height: 100%;
+      min-height: 320px;
+      background: #fff;
+    }
+
+    @media (max-width: 1080px) {
+      .hero,
+      .player-shell,
+      .split-grid,
+      .course-lessons,
+      .choice-grid,
+      .labs-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .player-main {
+        grid-template-rows: auto auto;
+      }
+
+      .video-frame-card,
+      #youtube-player,
+      #youtube-player iframe {
+        min-height: 52vh;
+      }
+
+      .chat-input-row,
+      .search-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .topbar,
+      .player-header,
+      .player-shell,
+      .player-bottom {
+        padding-left: 0.9rem;
+        padding-right: 0.9rem;
+      }
+
+      .container { width: min(100% - 1rem, 1240px); }
+      .hero-copy,
+      .stats-card,
+      .course-row,
+      .sidebar-panel,
+      .checkpoint-content,
+      .chat-header {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-badge">IA</div>
+        <div>
+          <div>Campus IA</div>
+          <div style="font-size: 0.88rem; color: var(--muted); font-weight: 500;">Prototipo de plataforma universitaria asincrónica</div>
+        </div>
+      </div>
+      <nav class="topnav">
+        <a class="nav-link active" href="#inicio" data-route="inicio">Inicio</a>
+        <a class="nav-link" href="#cursos" data-route="cursos">Cursos</a>
+        <a class="nav-link" href="#leccion" data-route="leccion">Lección</a>
+      </nav>
+    </header>
+
+    <main>
+      <section id="page-inicio" class="page active">
+        <div class="container">
+          <div class="hero">
+            <div class="panel hero-copy">
+              <div class="eyebrow">Demo funcional</div>
+              <h1>Videos universitarios asincrónicos con IA contextual debajo del reproductor</h1>
+              <p>Este prototipo ya simula varias páginas, catálogo de cursos, lección desbloqueada, reproductor inmersivo con YouTube, checkpoint pedagógico en mitad del video y un panel de IA listo para conectarse por API.</p>
+              <div class="hero-actions">
+                <a href="#cursos" class="btn btn-primary" data-route="cursos">Entrar a cursos</a>
+                <button class="btn btn-secondary" id="jumpToLessonBtn">Abrir demo de Álgebra Lineal</button>
+              </div>
+              <div class="split-grid">
+                <div class="panel mini-card">
+                  <h3>1. Catálogo</h3>
+                  <p>Una fila por curso y varias lecciones por materia, con una sola clase habilitada y las demás bloqueadas con candado.</p>
+                </div>
+                <div class="panel mini-card">
+                  <h3>2. Reproductor</h3>
+                  <p>Vista tipo fullscreen, video grande, búsqueda textual, capítulos, acciones contextuales y panel lateral con estado del alumno.</p>
+                </div>
+                <div class="panel mini-card">
+                  <h3>3. IA + checkpoint</h3>
+                  <p>En un momento del video se pausa la reproducción y el alumno elige ver un ejemplo, seguir o hacer un ejercicio interactivo.</p>
+                </div>
+              </div>
+            </div>
+
+            <aside class="panel stats-card">
+              <div>
+                <div class="eyebrow">Lo que ya muestra esta demo</div>
+                <h2 style="margin-bottom: 0.5rem;">Flujo mínimo convincente para pitch</h2>
+                <p style="margin-bottom: 0;">Todo está armado en un único HTML para que lo puedas abrir, editar y subir rápido.</p>
+              </div>
+              <div class="mini-kpis">
+                <span class="kpi">Multipágina</span>
+                <span class="kpi">YouTube embebido</span>
+                <span class="kpi">Chat IA</span>
+                <span class="kpi">Checkpoint</span>
+              </div>
+              <div class="feature-list">
+                <span class="tag">Álgebra Lineal</span>
+                <span class="tag">Análisis Matemático I</span>
+                <span class="tag">Física I</span>
+                <span class="tag">Microlearning</span>
+                <span class="tag">Búsqueda por texto</span>
+                <span class="tag">Preparado para API</span>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-cursos" class="page">
+        <div class="container">
+          <div class="section-title">
+            <div>
+              <div class="eyebrow">Catálogo</div>
+              <h2>Cursos</h2>
+              <p style="margin-bottom: 0;">Una fila por materia. Solo una lección está disponible para esta demo; las demás aparecen bloqueadas.</p>
+            </div>
+          </div>
+
+          <div class="courses-list" id="coursesList"></div>
+        </div>
+      </section>
+
+      <section id="page-leccion" class="page player-page">
+        <div class="player-layout">
+          <div class="player-header">
+            <div class="title-wrap">
+              <div class="eyebrow">Lección desbloqueada</div>
+              <h2 id="lessonTitle">Álgebra Lineal — Vectores, combinaciones lineales y span</h2>
+              <div class="lesson-meta">
+                <span class="meta-chip">Curso: Álgebra Lineal</span>
+                <span class="meta-chip">Fuente: YouTube</span>
+                <span class="meta-chip">Asistente IA contextual</span>
+                <span class="meta-chip">Checkpoint interactivo</span>
+              </div>
+              <div id="deploymentWarning" class="deployment-warning">Abriste esta demo como archivo local. Para que el video de YouTube controlado por API no falle con error 153, conviene servirla por HTTPS en un hosting estático.</div>
+            </div>
+            <div class="player-tools">
+              <a href="#cursos" class="btn btn-secondary" data-route="cursos">Volver a cursos</a>
+              <button class="btn btn-secondary" id="fullscreenBtn">Pantalla completa</button>
+            </div>
+          </div>
+
+          <div class="player-shell">
+            <div class="player-main">
+              <div class="video-frame-card" id="videoFrameCard">
+                <div id="youtube-player"></div>
+                <div class="timeline-note">
+                  <div class="timeline-pill">Checkpoint configurado: +1:20 desde el inicio de esta demo</div>
+                  <div class="timeline-pill" id="currentTimePill">Tiempo actual: 0:00</div>
+                </div>
+              </div>
+
+              <div class="context-panel" id="contextPanel">
+                <div class="inline-actions" style="justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                  <h3 style="margin: 0;">Panel contextual</h3>
+                  <button class="btn btn-secondary" id="closeContextPanel">Cerrar</button>
+                </div>
+                <div id="contextPanelContent"></div>
+              </div>
+            </div>
+
+            <aside class="player-sidebar">
+              <div class="sidebar-panel">
+                <div class="eyebrow">Capítulos</div>
+                <h3 style="margin-bottom: 0.35rem;">Recorrido de la lección</h3>
+                <p style="margin-bottom: 0;">Podés convertir estos capítulos en links temporales reales cuando armes el mapeo final del video.</p>
+                <div class="chapter-list">
+                  <div class="chapter-item current">
+                    <div>
+                      <strong>Introducción a vectores</strong>
+                      <div style="color: var(--muted);">00:00 → 01:20</div>
+                    </div>
+                    <span class="open-badge">Ahora</span>
+                  </div>
+                  <div class="chapter-item">
+                    <div>
+                      <strong>Ejemplo guiado</strong>
+                      <div style="color: var(--muted);">01:20 → 03:00</div>
+                    </div>
+                    <span class="lock-badge">Checkpoint</span>
+                  </div>
+                  <div class="chapter-item">
+                    <div>
+                      <strong>Ejercicio corto</strong>
+                      <div style="color: var(--muted);">03:00 → 05:00</div>
+                    </div>
+                    <span class="lock-badge">Luego</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sidebar-panel">
+                <div class="eyebrow">Búsqueda</div>
+                <h3 style="margin-bottom: 0.45rem;">Búsqueda textual simulada</h3>
+                <p style="margin-bottom: 0;">Ejemplo de full-text search para saltar a una explicación.</p>
+                <div class="search-row">
+                  <input id="searchInput" class="search-input" type="text" placeholder="Buscar 'span', 'vector', 'diagonalización'..." />
+                  <button id="searchBtn" class="btn btn-secondary">Buscar</button>
+                </div>
+                <div id="searchResult" class="search-result"></div>
+              </div>
+            </aside>
+          </div>
+
+          <div class="player-bottom">
+            <div class="chat-panel">
+              <div class="chat-header">
+                <div>
+                  <div class="eyebrow" style="margin-bottom: 0.35rem;">Asistente del curso</div>
+                  <h3 style="margin: 0;">Ventana para preguntarle a la IA</h3>
+                </div>
+                <div class="quick-actions">
+                  <button class="btn btn-secondary" id="askCurrentMomentBtn">Preguntar sobre este momento</button>
+                  <button class="btn btn-secondary" id="exampleQuickBtn">Ver ejemplo</button>
+                </div>
+              </div>
+              <div class="chat-messages" id="chatMessages"></div>
+              <div class="chat-input-row">
+                <div class="chat-input-wrap">
+                  <textarea id="chatInput" placeholder="Escribí una pregunta sobre lo que se está explicando..."></textarea>
+                  <div class="footer-note">Ahora responde en modo demo. Después podés conectar este bloque a la API de OpenAI y usar el timestamp actual del video como contexto.</div>
+                </div>
+                <button class="btn btn-primary" id="sendChatBtn">Enviar</button>
+              </div>
+            </div>
+
+            <div class="labs-grid">
+              <div class="sidebar-panel tool-panel">
+                <div>
+                  <div class="eyebrow">GeoGebra embebido</div>
+                  <h3 style="margin-bottom: 0.4rem;">Laboratorio visual</h3>
+                  <p style="margin-bottom: 0.8rem;">Un espacio para manipular vectores, bases y transformaciones lineales en tiempo real.</p>
+                  <div class="inline-actions">
+                    <a class="btn btn-secondary" href="https://www.geogebra.org/classic" target="_blank" rel="noopener noreferrer">Abrir GeoGebra</a>
+                    <button class="btn btn-secondary" id="loadVectorDemoBtn">Cargar demo de vectores</button>
+                  </div>
+                </div>
+                <div class="tool-frame-wrap">
+                  <div id="geogebraApplet" class="geogebra-host"></div>
+                </div>
+              </div>
+
+              <div class="sidebar-panel tool-panel">
+                <div>
+                  <div class="eyebrow">JupyterLite</div>
+                  <h3 style="margin-bottom: 0.4rem;">Notebook Python en el navegador</h3>
+                  <p style="margin-bottom: 0.8rem;">REPL embebido para probar cuentas rápidas sin instalar nada en la computadora del alumno.</p>
+                  <div class="inline-actions">
+                    <a class="btn btn-secondary" href="https://jupyterlite.github.io/demo/repl/index.html?kernel=python&toolbar=1" target="_blank" rel="noopener noreferrer">Abrir JupyterLite</a>
+                    <button class="btn btn-secondary" id="pasteNotebookPromptBtn">Sugerir ejercicio en IA</button>
+                  </div>
+                </div>
+                <div class="tool-frame-wrap">
+                  <iframe
+                    class="tool-frame"
+                    title="JupyterLite REPL"
+                    loading="lazy"
+                    src="https://jupyterlite.github.io/demo/repl/index.html?kernel=python&toolbar=1&promptCellPosition=bottom&showBanner=0&clearCellsOnExecute=0&code=%23%20Prob%C3%A1%20combinaciones%20lineales%0Aimport%20numpy%20as%20np%0Av1%20%3D%20np.array%28%5B1%2C0%5D%29%0Av2%20%3D%20np.array%28%5B0%2C1%5D%29%0Aa%2C%20b%20%3D%202%2C%20-1%0Aresultado%20%3D%20a*v1%20%2B%20b*v2%0Aresultado&execute=0">
+                  </iframe>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="checkpoint-overlay" id="checkpointOverlay">
+    <div class="checkpoint-sheet">
+      <div class="checkpoint-header">
+        <div>
+          <div class="eyebrow" style="margin-bottom: 0.35rem;">Checkpoint pedagógico</div>
+          <h3 style="margin: 0;">Acabás de llegar a un punto clave del tema</h3>
+        </div>
+        <button class="btn btn-secondary" id="closeCheckpointBtn">Cerrar</button>
+      </div>
+      <div class="checkpoint-content">
+        <p style="margin-bottom: 0;">¿Qué querés hacer ahora? En esta demo el video se pausa automáticamente para que el alumno decida si prefiere un ejemplo, seguir al próximo bloque o resolver un ejercicio breve.</p>
+        <div class="choice-grid">
+          <div class="choice-card" data-choice="example">
+            <h4>Ver un ejemplo</h4>
+            <p style="margin-bottom: 0;">Abrir una explicación complementaria justo después de la pausa.</p>
+          </div>
+          <div class="choice-card" data-choice="continue">
+            <h4>Continuar</h4>
+            <p style="margin-bottom: 0;">Cerrar el checkpoint y seguir con el siguiente tramo del video.</p>
+          </div>
+          <div class="choice-card" data-choice="exercise">
+            <h4>Hacer ejercicio</h4>
+            <p style="margin-bottom: 0;">Resolver una actividad interactiva con feedback inmediato.</p>
+          </div>
+        </div>
+
+        <div id="exerciseBox" class="exercise-box">
+          <h4>Mini ejercicio</h4>
+          <p>¿Cuál de las siguientes afirmaciones describe mejor el <em>span</em> de dos vectores?</p>
+          <label class="quiz-option"><input type="radio" name="checkpointQuiz" value="a" /> Es el producto punto entre ambos vectores.</label>
+          <label class="quiz-option"><input type="radio" name="checkpointQuiz" value="b" /> Es el conjunto de todas las combinaciones lineales posibles de esos vectores.</label>
+          <label class="quiz-option"><input type="radio" name="checkpointQuiz" value="c" /> Es la longitud total de los dos vectores sumada.</label>
+          <div class="checkpoint-actions">
+            <button class="btn btn-success" id="checkExerciseBtn">Comprobar</button>
+            <button class="btn btn-secondary" id="resumeAfterExerciseBtn">Seguir viendo</button>
+          </div>
+          <div id="exerciseFeedback" class="feedback"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const courseData = [
+      {
+        id: 'algebra-lineal',
+        name: 'Álgebra Lineal',
+        description: 'Vectores, matrices, diagonalización y transformaciones lineales.',
+        progress: '1/6 lecciones disponibles en demo',
+        lessons: [
+          { id: 'alg-1', title: 'Vectores, combinaciones lineales y span', duration: '11 min', unlocked: true, label: 'Disponible ahora' },
+          { id: 'alg-2', title: 'Independencia lineal', duration: '13 min', unlocked: false },
+          { id: 'alg-3', title: 'Bases y dimensión', duration: '15 min', unlocked: false },
+          { id: 'alg-4', title: 'Diagonalización', duration: '16 min', unlocked: false }
+        ]
+      },
+      {
+        id: 'analisis-matematico',
+        name: 'Análisis Matemático I',
+        description: 'Límites, derivadas, continuidad e interpretación geométrica.',
+        progress: '0/7 lecciones disponibles en demo',
+        lessons: [
+          { id: 'ana-1', title: 'Introducción a límites', duration: '9 min', unlocked: false },
+          { id: 'ana-2', title: 'Definición formal', duration: '14 min', unlocked: false },
+          { id: 'ana-3', title: 'Continuidad', duration: '12 min', unlocked: false },
+          { id: 'ana-4', title: 'Derivada como tasa de cambio', duration: '10 min', unlocked: false }
+        ]
+      },
+      {
+        id: 'fisica-1',
+        name: 'Física I',
+        description: 'Movimiento, fuerzas, energía y modelización matemática.',
+        progress: '0/5 lecciones disponibles en demo',
+        lessons: [
+          { id: 'fis-1', title: 'Cinemática unidimensional', duration: '10 min', unlocked: false },
+          { id: 'fis-2', title: 'Vectores en física', duration: '12 min', unlocked: false },
+          { id: 'fis-3', title: 'Segunda ley de Newton', duration: '15 min', unlocked: false },
+          { id: 'fis-4', title: 'Trabajo y energía', duration: '11 min', unlocked: false }
+        ]
+      }
+    ];
+
+    const transcriptIndex = {
+      diagonalizacion: { time: 0, label: 'Todavía no está en esta lección demo. En el producto real te llevaría al curso o video correspondiente.' },
+      vector: { time: 18, label: 'Se menciona la idea de vector al comienzo de la explicación.' },
+      vectores: { time: 18, label: 'Se menciona la idea de vector al comienzo de la explicación.' },
+      span: { time: 80, label: 'Checkpoint sugerido: aparece un buen momento para reforzar el concepto.' },
+      combinacion: { time: 65, label: 'Bloque donde aparecen combinaciones lineales.' },
+      'combinaciones lineales': { time: 65, label: 'Bloque donde aparecen combinaciones lineales.' }
+    };
+
+    const YOUTUBE_VIDEO_ID = 'fNk_zzaMoSs';
+    const VIDEO_START_SECONDS = 394;
+    const CHECKPOINT_OFFSET_SECONDS = 80;
+    const CHECKPOINT_TIME = VIDEO_START_SECONDS + CHECKPOINT_OFFSET_SECONDS;
+    let player = null;
+    let playerReady = false;
+    let lastKnownTime = 0;
+    let checkpointShown = false;
+    let timeInterval = null;
+
+    const routes = ['inicio', 'cursos', 'leccion'];
+    const pages = Object.fromEntries(routes.map(route => [route, document.getElementById(`page-${route}`)]));
+    const navLinks = document.querySelectorAll('.nav-link');
+    const coursesList = document.getElementById('coursesList');
+    const currentTimePill = document.getElementById('currentTimePill');
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const searchResult = document.getElementById('searchResult');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const sendChatBtn = document.getElementById('sendChatBtn');
+    const askCurrentMomentBtn = document.getElementById('askCurrentMomentBtn');
+    const exampleQuickBtn = document.getElementById('exampleQuickBtn');
+    const checkpointOverlay = document.getElementById('checkpointOverlay');
+    const exerciseBox = document.getElementById('exerciseBox');
+    const exerciseFeedback = document.getElementById('exerciseFeedback');
+    const contextPanel = document.getElementById('contextPanel');
+    const contextPanelContent = document.getElementById('contextPanelContent');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const videoFrameCard = document.getElementById('videoFrameCard');
+    const deploymentWarning = document.getElementById('deploymentWarning');
+    const loadVectorDemoBtn = document.getElementById('loadVectorDemoBtn');
+    const pasteNotebookPromptBtn = document.getElementById('pasteNotebookPromptBtn');
+
+    let geogebraAppletLoaded = false;
+
+    function renderCourses() {
+      coursesList.innerHTML = courseData.map(course => `
+        <section class="panel course-row">
+          <div class="course-row-header">
+            <div>
+              <h3 style="margin-bottom: 0.4rem;">${course.name}</h3>
+              <p style="margin-bottom: 0.55rem;">${course.description}</p>
+              <div class="course-meta">
+                <span class="meta-chip">${course.progress}</span>
+                <span class="meta-chip">Soporte IA contextual</span>
+                <span class="meta-chip">Microlearning</span>
+              </div>
+            </div>
+          </div>
+          <div class="course-lessons">
+            ${course.lessons.map(lesson => `
+              <article class="lesson-card ${lesson.unlocked ? 'unlocked' : 'locked'}" data-unlocked="${lesson.unlocked}" data-lesson-id="${lesson.id}">
+                <div class="lesson-thumb">
+                  <strong>${course.name}</strong>
+                  <span class="${lesson.unlocked ? 'open-badge' : 'lock-badge'}">${lesson.unlocked ? '▶ Disponible' : '🔒 Bloqueado'}</span>
+                </div>
+                <div class="lesson-body">
+                  <div>
+                    <div class="lesson-title">${lesson.title}</div>
+                    <div class="lesson-subtitle">${lesson.duration} · ${lesson.unlocked ? 'Entrar a la clase' : 'Se desbloquea luego'}</div>
+                  </div>
+                  <div class="feature-list">
+                    <span class="tag">IA</span>
+                    <span class="tag">Checkpoint</span>
+                  </div>
+                </div>
+              </article>
+            `).join('')}
+          </div>
+        </section>
+      `).join('');
+
+      document.querySelectorAll('.lesson-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const unlocked = card.dataset.unlocked === 'true';
+          if (!unlocked) return;
+          location.hash = '#leccion';
+          setTimeout(() => openLesson(card.dataset.lessonId), 20);
+        });
+      });
+    }
+
+    function setActiveRoute(route) {
+      const safeRoute = routes.includes(route) ? route : 'inicio';
+      Object.entries(pages).forEach(([key, page]) => page.classList.toggle('active', key === safeRoute));
+      navLinks.forEach(link => link.classList.toggle('active', link.dataset.route === safeRoute));
+      if (safeRoute === 'leccion') ensurePlayer();
+    }
+
+    function openLesson(lessonId) {
+      const lesson = courseData.flatMap(c => c.lessons).find(l => l.id === lessonId) || courseData[0].lessons[0];
+      document.getElementById('lessonTitle').textContent = `Álgebra Lineal — ${lesson.title}`;
+      setActiveRoute('leccion');
+      ensurePlayer();
+      checkpointShown = false;
+      exerciseBox.classList.remove('active');
+      exerciseFeedback.className = 'feedback';
+      exerciseFeedback.textContent = '';
+      if (player && playerReady && typeof player.seekTo === 'function') {
+        player.loadVideoById({ videoId: YOUTUBE_VIDEO_ID, startSeconds: VIDEO_START_SECONDS });
+        player.playVideo();
+      }
+      if (timeInterval) clearInterval(timeInterval);
+      startTimeTracking();
+    }
+
+    function handleHashRouting() {
+      const hash = location.hash.replace('#', '') || 'inicio';
+      setActiveRoute(hash);
+    }
+
+    function formatTime(seconds) {
+      const safe = Math.max(0, Math.floor(seconds || 0));
+      const mins = Math.floor(safe / 60);
+      const secs = safe % 60;
+      return `${mins}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function addMessage(role, content) {
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+      div.innerHTML = content;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function seedChat() {
+      chatMessages.innerHTML = '';
+      addMessage('ai', '<strong>IA del curso</strong><br>Hola. Estoy conectada al material de esta lección demo. Podés preguntarme sobre lo que aparece en el video, pedir un ejemplo o decirme “explícame esto más simple”.');
+      addMessage('ai', '<strong>Tip contextual:</strong><br>En una versión conectada por API, este bloque enviaría tu pregunta junto con el timestamp actual del video y el capítulo activo para responder con más precisión.');
+    }
+
+    async function callOpenAIDemoAPI(question) {
+      // Reemplazo sugerido para conectar el chat a tu backend.
+      // Ese backend debería hablar con la API de OpenAI y no exponer la API key en el navegador.
+      // Ejemplo:
+      // const response = await fetch('/api/tutor', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     question,
+      //     timestamp: lastKnownTime,
+      //     course: 'Álgebra Lineal',
+      //     lesson: document.getElementById('lessonTitle').textContent
+      //   })
+      // });
+      // const data = await response.json();
+      // return data.answer;
+      return fakeTutorReply(question);
+    }
+
+    function fakeTutorReply(question) {
+      const lowered = question.toLowerCase();
+      const timeLabel = formatTime(lastKnownTime);
+      if (lowered.includes('ejemplo') || lowered.includes('span')) {
+        return `En el minuto ${timeLabel}, una forma simple de pensarlo es esta: el <em>span</em> de dos vectores es todo lo que podés construir combinándolos con distintos pesos. Si querés, abrí “Ver ejemplo” y te muestro una versión visual.`;
+      }
+      if (lowered.includes('simple') || lowered.includes('fácil') || lowered.includes('facil')) {
+        return `Versión corta: el video está mostrando cómo una idea abstracta se vuelve geométrica. En vez de memorizar definición + fórmula, pensalo como “qué posiciones del plano puedo alcanzar usando estos vectores”.`;
+      }
+      if (lowered.includes('momento') || lowered.includes('timestamp')) {
+        return `Tomé como contexto el instante ${timeLabel}. Ese dato se puede mandar junto con tu pregunta a la API para que la respuesta quede anclada al punto exacto del video.`;
+      }
+      return `Pregunta recibida en ${timeLabel}. En la demo estoy respondiendo con lógica simulada, pero este bloque ya está preparado para conectarse a la API de OpenAI y enviar: pregunta del alumno + timestamp + curso + lección + capítulo activo.`;
+    }
+
+    function sendChat() {
+      const value = chatInput.value.trim();
+      if (!value) return;
+      addMessage('user', value.replace(/\n/g, '<br>'));
+      chatInput.value = '';
+      setTimeout(async () => addMessage('ai', await callOpenAIDemoAPI(value)), 250);
+    }
+
+    function openContext(type) {
+      contextPanel.classList.add('active');
+      if (type === 'example') {
+        contextPanelContent.innerHTML = `
+          <h3>Ejemplo complementario</h3>
+          <p>Supongamos que tomás los vectores <strong>(1,0)</strong> y <strong>(0,1)</strong>. Sus combinaciones lineales generan todo el plano: cualquier punto <strong>(a,b)</strong> puede escribirse como <strong>a(1,0) + b(0,1)</strong>.</p>
+          <p>En una versión avanzada, acá podrías incrustar GeoGebra o una animación propia para mover deslizadores y ver cómo cambia el resultado en tiempo real.</p>
+          <div class="inline-actions">
+            <button class="btn btn-secondary" onclick="resumeVideo()">Seguir con el video</button>
+            <button class="btn btn-primary" onclick="injectChatPrompt('Explicame de nuevo el ejemplo del span con palabras simples')">Preguntarle a la IA sobre este ejemplo</button>
+          </div>
+        `;
+      }
+      if (type === 'exercise') {
+        contextPanelContent.innerHTML = `
+          <h3>Ejercicio interactivo</h3>
+          <p>Este espacio puede alojar un quiz, un notebook embebido o una mini interacción visual. En la demo principal, el ejercicio también está disponible dentro del checkpoint.</p>
+          <div class="inline-actions">
+            <button class="btn btn-primary" onclick="showCheckpointExerciseOnly()">Abrir ejercicio</button>
+            <button class="btn btn-secondary" onclick="resumeVideo()">Volver al video</button>
+          </div>
+        `;
+      }
+    }
+
+    function closeContextPanel() {
+      contextPanel.classList.remove('active');
+    }
+
+    function ensurePlayer() {
+      if (player) return;
+      if (window.YT && window.YT.Player) {
+        createPlayer();
+      }
+    }
+
+    function createPlayer() {
+      const playerVars = {
+        rel: 0,
+        modestbranding: 1,
+        playsinline: 1,
+        start: VIDEO_START_SECONDS
+      };
+
+      if (location.protocol === 'http:' || location.protocol === 'https:') {
+        playerVars.origin = location.origin;
+      }
+
+      player = new YT.Player('youtube-player', {
+        videoId: YOUTUBE_VIDEO_ID,
+        host: 'https://www.youtube.com',
+        playerVars,
+        events: {
+          onReady: onPlayerReady,
+          onStateChange: onPlayerStateChange
+        }
+      });
+    }
+
+    function onPlayerReady() {
+      playerReady = true;
+      if (location.protocol === 'file:') {
+        deploymentWarning.classList.add('active');
+      }
+      if (player && typeof player.cueVideoById === 'function') {
+        player.cueVideoById({ videoId: YOUTUBE_VIDEO_ID, startSeconds: VIDEO_START_SECONDS });
+      }
+      startTimeTracking();
+      initGeoGebraApplet();
+    }
+
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.PLAYING) {
+        startTimeTracking();
+      }
+    }
+
+    function startTimeTracking() {
+      if (timeInterval) clearInterval(timeInterval);
+      timeInterval = setInterval(() => {
+        if (!player || !playerReady || typeof player.getCurrentTime !== 'function') return;
+        lastKnownTime = player.getCurrentTime() || 0;
+        currentTimePill.textContent = `Tiempo actual: ${formatTime(lastKnownTime)}`;
+        if (!checkpointShown && lastKnownTime >= CHECKPOINT_TIME && location.hash.replace('#', '') === 'leccion') {
+          checkpointShown = true;
+          player.pauseVideo();
+          showCheckpoint();
+        }
+      }, 400);
+    }
+
+    function showCheckpoint() {
+      checkpointOverlay.classList.add('active');
+      exerciseBox.classList.remove('active');
+      exerciseFeedback.className = 'feedback';
+      exerciseFeedback.textContent = '';
+    }
+
+    function hideCheckpoint() {
+      checkpointOverlay.classList.remove('active');
+    }
+
+    function resumeVideo() {
+      hideCheckpoint();
+      closeContextPanel();
+      if (player && playerReady && typeof player.playVideo === 'function') {
+        player.playVideo();
+      }
+    }
+
+    function showCheckpointExerciseOnly() {
+      checkpointOverlay.classList.add('active');
+      exerciseBox.classList.add('active');
+    }
+
+    function performSearch() {
+      const raw = searchInput.value.trim().toLowerCase();
+      if (!raw) {
+        searchResult.classList.remove('active');
+        searchResult.textContent = '';
+        return;
+      }
+      const result = transcriptIndex[raw] || transcriptIndex[Object.keys(transcriptIndex).find(key => raw.includes(key))];
+      if (!result) {
+        searchResult.classList.add('active');
+        searchResult.innerHTML = `<strong>No encontré ese término en esta demo.</strong><br>En el producto real, esta búsqueda usaría transcripción + índice semántico para saltar al segundo exacto.`;
+        return;
+      }
+      searchResult.classList.add('active');
+      searchResult.innerHTML = `<strong>Resultado:</strong> ${result.label}<br><br><button class="btn btn-primary" onclick="jumpToTime(${result.time})">Ir a ${formatTime(result.time)}</button>`;
+    }
+
+    function jumpToTime(seconds) {
+      location.hash = '#leccion';
+      setActiveRoute('leccion');
+      ensurePlayer();
+      setTimeout(() => {
+        if (player && playerReady) {
+          player.seekTo(seconds, true);
+          player.playVideo();
+        }
+      }, 200);
+    }
+
+    function handleCheckpointChoice(choice) {
+      if (choice === 'continue') {
+        resumeVideo();
+      }
+      if (choice === 'example') {
+        hideCheckpoint();
+        openContext('example');
+      }
+      if (choice === 'exercise') {
+        exerciseBox.classList.add('active');
+      }
+    }
+
+    function checkCheckpointExercise() {
+      const selected = document.querySelector('input[name="checkpointQuiz"]:checked');
+      if (!selected) {
+        exerciseFeedback.className = 'feedback bad';
+        exerciseFeedback.textContent = 'Seleccioná una opción antes de comprobar.';
+        return;
+      }
+      if (selected.value === 'b') {
+        exerciseFeedback.className = 'feedback ok';
+        exerciseFeedback.innerHTML = 'Correcto. El <em>span</em> es el conjunto de todas las combinaciones lineales posibles de los vectores dados.';
+      } else {
+        exerciseFeedback.className = 'feedback bad';
+        exerciseFeedback.innerHTML = 'Todavía no. No se trata de un producto punto ni de una suma de longitudes, sino del conjunto de resultados que podés generar combinando los vectores.';
+      }
+    }
+
+    function injectChatPrompt(text) {
+      chatInput.value = text;
+      chatInput.focus();
+    }
+
+    function initGeoGebraApplet() {
+      if (geogebraAppletLoaded || typeof GGBApplet === 'undefined') return;
+      geogebraAppletLoaded = true;
+      const params = {
+        appName: 'graphing',
+        width: 980,
+        height: 420,
+        showToolBar: false,
+        showAlgebraInput: true,
+        showMenuBar: false,
+        borderColor: false,
+        enableShiftDragZoom: true,
+        scaleContainerClass: 'geogebra-host',
+        appletOnLoad(api) {
+          window.ggbApi = api;
+          loadGeoGebraVectorDemo();
+        }
+      };
+      const applet = new GGBApplet(params, true);
+      applet.inject('geogebraApplet');
+    }
+
+    function loadGeoGebraVectorDemo() {
+      if (!window.ggbApi || typeof window.ggbApi.evalCommand !== 'function') return;
+      const commands = [
+        'DeleteAll[]',
+        'v = Vector((0,0),(2,1))',
+        'w = Vector((0,0),(1,2))',
+        'A = (0,0)',
+        'B = (2,1)',
+        'C = (1,2)',
+        'P = B + C',
+        'Text("v", (2.15,1.05))',
+        'Text("w", (1.15,2.1))',
+        'Text("v + w", (3.2,3.15))'
+      ];
+      commands.forEach(cmd => { try { window.ggbApi.evalCommand(cmd); } catch (e) {} });
+      try { window.ggbApi.setCoordSystem(-1, 5, -1, 5); } catch (e) {}
+    }
+
+    document.getElementById('jumpToLessonBtn').addEventListener('click', () => openLesson('alg-1'));
+    loadVectorDemoBtn.addEventListener('click', () => {
+      initGeoGebraApplet();
+      loadGeoGebraVectorDemo();
+    });
+    pasteNotebookPromptBtn.addEventListener('click', () => {
+      injectChatPrompt('Dame un ejercicio corto en Python para practicar combinaciones lineales con vectores de R2');
+    });
+    document.getElementById('closeContextPanel').addEventListener('click', closeContextPanel);
+    document.getElementById('closeCheckpointBtn').addEventListener('click', resumeVideo);
+    document.getElementById('checkExerciseBtn').addEventListener('click', checkCheckpointExercise);
+    document.getElementById('resumeAfterExerciseBtn').addEventListener('click', resumeVideo);
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performSearch(); });
+    sendChatBtn.addEventListener('click', sendChat);
+    chatInput.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') sendChat();
+    });
+    askCurrentMomentBtn.addEventListener('click', () => {
+      injectChatPrompt(`¿Qué se está explicando alrededor del minuto ${formatTime(lastKnownTime)}?`);
+    });
+    exampleQuickBtn.addEventListener('click', () => openContext('example'));
+    fullscreenBtn.addEventListener('click', async () => {
+      if (videoFrameCard.requestFullscreen) {
+        try { await videoFrameCard.requestFullscreen(); } catch (e) {}
+      }
+    });
+
+    document.querySelectorAll('[data-route]').forEach(link => {
+      link.addEventListener('click', () => {
+        const route = link.dataset.route;
+        setTimeout(() => setActiveRoute(route), 10);
+      });
+    });
+
+    document.querySelectorAll('.choice-card').forEach(card => {
+      card.addEventListener('click', () => handleCheckpointChoice(card.dataset.choice));
+    });
+
+    window.addEventListener('hashchange', handleHashRouting);
+    window.jumpToTime = jumpToTime;
+    window.resumeVideo = resumeVideo;
+    window.injectChatPrompt = injectChatPrompt;
+    window.showCheckpointExerciseOnly = showCheckpointExerciseOnly;
+
+    renderCourses();
+    seedChat();
+    handleHashRouting();
+  </script>
+  <script src="https://www.geogebra.org/apps/deployggb.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    function onYouTubeIframeAPIReady() {
+      if (!player) createPlayer();
+    }
+  </script>
+</body>
+</html>
